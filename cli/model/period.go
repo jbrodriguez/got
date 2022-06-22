@@ -8,4 +8,5 @@ const (
 	Someday
 	Week
 	Month
+	Calendar
 )

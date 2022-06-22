@@ -197,8 +197,7 @@ func getWeeks(rules model.Rules) (int, int, []string) {
 	weeksPerMonth := (lastWeek - firstWeek) + 2
 	weeks := make([]string, weeksPerMonth)
 
-	interval := lib.GetRange(model.Week, rules.Interval.Start.Local())
-	current := interval.Start
+	current := rules.Interval.Start
 
 	for i := 0; i < weeksPerMonth; i++ {
 		weeks[i] = current.Format("Jan 02")

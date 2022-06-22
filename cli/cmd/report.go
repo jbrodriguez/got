@@ -15,24 +15,27 @@ import (
 )
 
 type Report struct {
-	Today   bool   `short:"t" help:"report for the current day" `
-	Someday bool   `short:"s" help:"report for a specific day"`
-	Week    bool   `short:"w" help:"report for the current week"`
-	Month   bool   `short:"m" help:"report for the current month"`
-	Param   string `arg:"" optional:"" help:"date to report on"`
+	Today    bool   `short:"t" help:"report for the current day" `
+	Someday  bool   `short:"s" help:"report for a specific day"`
+	Week     bool   `short:"w" help:"report for the a week"`
+	Month    bool   `short:"m" help:"report for the a month"`
+	Calendar bool   `short:"c" help:"report for the a calendar month"`
+	Param    string `arg:"" optional:"" help:"date to report on"`
 }
 
 func (r *Report) Run(ctx *Context) error {
 	period := model.Unknown
 	switch {
-	case r.Today || (!r.Today && !r.Someday && !r.Week && !r.Month && r.Param == ""):
+	case r.Today || (!r.Today && !r.Someday && !r.Week && !r.Month && !r.Calendar && r.Param == ""):
 		period = model.Today
-	case (r.Someday && r.Param != "") || (r.Param != "" && !r.Someday && !r.Week && !r.Month):
+	case (r.Someday && r.Param != "") || (r.Param != "" && !r.Someday && !r.Week && !r.Month && !r.Calendar):
 		period = model.Someday
 	case r.Week:
 		period = model.Week
 	case r.Month:
 		period = model.Month
+	case r.Calendar:
+		period = model.Calendar
 	}
 
 	if period == model.Unknown {
@@ -58,6 +61,8 @@ func (r *Report) Run(ctx *Context) error {
 
 	var renderer model.Renderer
 	switch period {
+	case model.Calendar:
+		renderer = month.NewMonth(rules)
 	case model.Month:
 		renderer = month.NewMonth(rules)
 	case model.Week:

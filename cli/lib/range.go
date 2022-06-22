@@ -20,6 +20,10 @@ func GetRange(period model.Period, date time.Time) model.Range {
 		start, end = weekInterval(date.ISOWeek())
 	case model.Month:
 		start, end = monthInterval(date.Year(), date.Month())
+	case model.Calendar:
+		ms, me := monthInterval(date.Year(), date.Month())
+		start, _ = weekInterval(ms.ISOWeek())
+		_, end = weekInterval(me.ISOWeek())
 	}
 
 	return model.Range{
