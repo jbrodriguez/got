@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"got/cli/core/renderer/month"
 	"got/cli/core/renderer/someday"
 	"got/cli/core/renderer/today"
 	"got/cli/core/renderer/week"
@@ -57,6 +58,8 @@ func (r *Report) Run(ctx *Context) error {
 
 	var renderer model.Renderer
 	switch period {
+	case model.Month:
+		renderer = month.NewMonth(rules)
 	case model.Week:
 		renderer = week.NewWeek(rules)
 	case model.Someday:
