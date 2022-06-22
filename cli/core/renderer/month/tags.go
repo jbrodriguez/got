@@ -13,7 +13,7 @@ import (
 	"got/cli/model"
 )
 
-type Fx func(time.Duration) interface{}
+type Fx func(time.Duration) any
 
 type Tags struct {
 	rules    model.Rules
@@ -205,7 +205,7 @@ func renderLine(tag string, samples []time.Duration, weeksPerMonth int, fn Fx) (
 	return line, values
 }
 
-func formatProjects(duration time.Duration) interface{} {
+func formatProjects(duration time.Duration) any {
 	if duration <= 0 {
 		return Gray(8-1, lib.FormatDuration(duration))
 	}
@@ -213,10 +213,10 @@ func formatProjects(duration time.Duration) interface{} {
 	return Green(lib.FormatDuration(duration))
 }
 
-func formatWorking(duration time.Duration) interface{} {
+func formatWorking(duration time.Duration) any {
 	return formatProjects(duration)
 }
 
-func formatBreaks(duration time.Duration) interface{} {
+func formatBreaks(duration time.Duration) any {
 	return Gray(8-1, lib.FormatDuration(duration))
 }
