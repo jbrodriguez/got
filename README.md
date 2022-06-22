@@ -69,6 +69,18 @@ got report -w
 
 # any week
 got report -w 2022-06-09
+
+# current month
+got report -m
+
+# any month
+got report -m 2022-05-01
+
+# calendar month (all weeks which include the current month)
+got report -c
+
+# any calendar month
+got report -c 2022-05-01
 ```
 
 ### Acknowledgements
