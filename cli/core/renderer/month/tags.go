@@ -31,9 +31,6 @@ type Tags struct {
 
 func NewTags(rules model.Rules) *Tags {
 	firstWeek, weeksPerMonth, weeks := getWeeks(rules)
-
-	fmt.Printf("zero(%d), wpm(%d), weeks(%+v)\n", firstWeek, weeksPerMonth, weeks)
-
 	return &Tags{
 		rules:         rules,
 		weeksPerMonth: weeksPerMonth,
