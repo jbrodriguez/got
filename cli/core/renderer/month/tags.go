@@ -13,12 +13,14 @@ import (
 	"got/cli/model"
 )
 
+type Fx func(time.Duration) interface{}
+
 type Tags struct {
 	rules    model.Rules
 	sections []model.Section
 
 	weeksPerMonth int
-	zeroIndex     int
+	firstWeek     int
 	weeks         []string
 
 	projects map[string][]time.Duration
@@ -28,14 +30,14 @@ type Tags struct {
 }
 
 func NewTags(rules model.Rules) *Tags {
-	zeroIndex, weeksPerMonth, weeks := getWeeks(rules)
+	firstWeek, weeksPerMonth, weeks := getWeeks(rules)
 
-	fmt.Printf("zero(%d), wpm(%d), weeks(%+v)\n", zeroIndex, weeksPerMonth, weeks)
+	fmt.Printf("zero(%d), wpm(%d), weeks(%+v)\n", firstWeek, weeksPerMonth, weeks)
 
 	return &Tags{
 		rules:         rules,
 		weeksPerMonth: weeksPerMonth,
-		zeroIndex:     zeroIndex,
+		firstWeek:     firstWeek,
 		weeks:         weeks,
 		projects:      make(map[string][]time.Duration),
 		totals:        make([]time.Duration, weeksPerMonth),
@@ -94,25 +96,43 @@ func (t *Tags) Render() {
 	)
 	fmt.Println()
 
+	separator := t.createSeparator()
+
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', tabwriter.AlignRight)
 
-	line1 := " "
-	line2 := ""
-	count := 0
+	t.renderWeekNames(w)
+
+	fmt.Fprintf(w, separator)
+
+	t.renderProjects(w, keys)
+
+	fmt.Fprintf(w, separator)
+
+	t.renderWorking(w)
+	t.renderBreak(w)
+
+	w.Flush()
+}
+
+func (t *Tags) getWeekIndex(date time.Time) int {
+	_, week := date.ISOWeek()
+	return week - t.firstWeek
+}
+
+func (t *Tags) renderWeekNames(w *tabwriter.Writer) {
+	line := " "
 	values := make([]any, t.weeksPerMonth)
 	for i := 0; i < t.weeksPerMonth-1; i++ {
-		line1 += "\t%s"
-		line2 += " \t"
-		count += 1
+		line += "\t%s"
 		values[i] = t.weeks[i]
 	}
-	line1 += " \t%s\t\n"
-	line2 += "\n"
+	line += " \t%s\t\n"
 	values[t.weeksPerMonth-1] = t.weeks[t.weeksPerMonth-1]
 
-	fmt.Fprintf(w, line1, values...)
-	fmt.Fprintf(w, line2)
+	fmt.Fprintf(w, line, values...)
+}
 
+func (t *Tags) renderProjects(w *tabwriter.Writer, keys []string) {
 	for _, tag := range keys {
 		if tag == "break" {
 			continue
@@ -120,74 +140,48 @@ func (t *Tags) Render() {
 
 		project := t.projects[tag]
 
-		line1 := "%s\t"
-		line2 := ""
-		count := 0
-		values := make([]any, t.weeksPerMonth+1)
-		values[0] = Blue(tag)
-		for i := 1; i < t.weeksPerMonth; i++ {
-			line1 += "%s\t"
-			line2 += " \t"
-			count += 1
-			values[i] = getView(project[i-1])
-		}
-		line1 += " \t%s\t\n"
-		line2 += "\n"
-		values[t.weeksPerMonth] = getView(project[t.weeksPerMonth-1])
-
-		fmt.Fprintf(w, line1, values...)
+		t.renderProject(w, tag, project)
 	}
+}
 
-	fmt.Fprint(w, line2)
+func (t *Tags) renderProject(w *tabwriter.Writer, tag string, project []time.Duration) {
+	line, values := renderLine(tag, project, t.weeksPerMonth, formatProjects)
+	fmt.Fprintf(w, line, values...)
+}
 
-	line1 = "%s\t"
-	line2 = ""
-	count = 0
-	values = make([]any, t.weeksPerMonth+1)
-	values[0] = Blue("working")
+func (t *Tags) renderWorking(w *tabwriter.Writer) {
+	line, values := renderLine("working", t.working, t.weeksPerMonth, formatWorking)
+	fmt.Fprintf(w, line, values...)
+}
+
+func (t *Tags) renderBreak(w *tabwriter.Writer) {
+	line, values := renderLine("break", t.breaks, t.weeksPerMonth, formatBreaks)
+	fmt.Fprintf(w, line, values...)
+}
+
+func (t *Tags) createSeparator() string {
+	line := ""
+
 	for i := 1; i < t.weeksPerMonth; i++ {
-		line1 += "%s\t"
-		line2 += " \t"
-		count += 1
-		values[i] = getView(t.working[i-1])
+		line += " \t"
 	}
-	line1 += " \t%s\t\n"
-	line2 += "\n"
-	values[t.weeksPerMonth] = getView(t.working[t.weeksPerMonth-1])
+	line += "\n"
 
-	fmt.Fprintf(w, line1, values...)
-
-	line1 = "%s\t"
-	line2 = ""
-	count = 0
-	values = make([]any, t.weeksPerMonth+1)
-	values[0] = Blue("break")
-	for i := 1; i < t.weeksPerMonth; i++ {
-		line1 += "%s\t"
-		line2 += " \t"
-		count += 1
-		values[i] = Gray(8-1, lib.FormatDuration(t.breaks[i-1]))
-	}
-	line1 += " \t%s\t\n"
-	line2 += "\n"
-	values[t.weeksPerMonth] = Gray(8-1, lib.FormatDuration(t.breaks[t.weeksPerMonth-1]))
-
-	fmt.Fprintf(w, line1, values...)
-
-	w.Flush()
+	return line
 }
 
 func getWeeks(rules model.Rules) (int, int, []string) {
 	_, firstWeek := rules.Interval.Start.Local().ISOWeek()
 	_, lastWeek := rules.Interval.End.Local().ISOWeek()
 
-	first := lib.GetRange(model.Week, rules.Interval.Start.Local())
-
-	// one is for the difference
-	// the other is to accommodate totals
+	// +1 for the difference
+	// +1 to accommodate totals
 	weeksPerMonth := (lastWeek - firstWeek) + 2
 	weeks := make([]string, weeksPerMonth)
-	current := first.Start
+
+	interval := lib.GetRange(model.Week, rules.Interval.Start.Local())
+	current := interval.Start
+
 	for i := 0; i < weeksPerMonth; i++ {
 		weeks[i] = current.Format("Jan 02")
 		current = current.AddDate(0, 0, 7)
@@ -197,15 +191,32 @@ func getWeeks(rules model.Rules) (int, int, []string) {
 	return firstWeek, weeksPerMonth, weeks
 }
 
-func (t *Tags) getWeekIndex(date time.Time) int {
-	_, week := date.ISOWeek()
-	return week - t.zeroIndex
+func renderLine(tag string, samples []time.Duration, weeksPerMonth int, fn Fx) (string, []any) {
+	line := "%s\t"
+	values := make([]any, weeksPerMonth+1)
+	values[0] = Blue(tag)
+	for i := 1; i < weeksPerMonth; i++ {
+		line += "%s\t"
+		values[i] = fn(samples[i-1])
+	}
+	line += " \t%s\t\n"
+	values[weeksPerMonth] = fn(samples[weeksPerMonth-1])
+
+	return line, values
 }
 
-func getView(duration time.Duration) interface{} {
+func formatProjects(duration time.Duration) interface{} {
 	if duration <= 0 {
 		return Gray(8-1, lib.FormatDuration(duration))
 	}
 
 	return Green(lib.FormatDuration(duration))
+}
+
+func formatWorking(duration time.Duration) interface{} {
+	return formatProjects(duration)
+}
+
+func formatBreaks(duration time.Duration) interface{} {
+	return Gray(8-1, lib.FormatDuration(duration))
 }
