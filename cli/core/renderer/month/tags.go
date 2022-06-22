@@ -86,14 +86,14 @@ func (t *Tags) Render() {
 
 	date := t.rules.Interval.Start.Local()
 
-	fmt.Printf("\n------------------- %s to %s (month %d) -------------------------------\t\n",
-		date.Format("Jan 02"),
-		t.rules.Interval.End.Local().Format("Jan 02"),
-		date.Month(),
+	fmt.Printf("\n----------------------------- %s %s -----------------------------\t\n",
+		date.Format("January"),
+		date.Format("2006"),
 	)
 	fmt.Println()
 
 	separator := t.createSeparator()
+	splitter := t.createSplitter()
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', tabwriter.AlignRight)
 
@@ -107,6 +107,10 @@ func (t *Tags) Render() {
 
 	t.renderWorking(w)
 	t.renderBreak(w)
+
+	fmt.Fprintf(w, splitter)
+
+	t.renderTotal(w)
 
 	w.Flush()
 }
@@ -142,17 +146,22 @@ func (t *Tags) renderProjects(w *tabwriter.Writer, keys []string) {
 }
 
 func (t *Tags) renderProject(w *tabwriter.Writer, tag string, project []time.Duration) {
-	line, values := renderLine(tag, project, t.weeksPerMonth, formatProjects)
+	line, values := renderLine(tag, project, t.weeksPerMonth, formatProjects, nil, true)
 	fmt.Fprintf(w, line, values...)
 }
 
 func (t *Tags) renderWorking(w *tabwriter.Writer) {
-	line, values := renderLine("working", t.working, t.weeksPerMonth, formatWorking)
+	line, values := renderLine("working", t.working, t.weeksPerMonth, formatWorking, formatTotalWorking, false)
 	fmt.Fprintf(w, line, values...)
 }
 
 func (t *Tags) renderBreak(w *tabwriter.Writer) {
-	line, values := renderLine("break", t.breaks, t.weeksPerMonth, formatBreaks)
+	line, values := renderLine("break", t.breaks, t.weeksPerMonth, formatBreaks, nil, false)
+	fmt.Fprintf(w, line, values...)
+}
+
+func (t *Tags) renderTotal(w *tabwriter.Writer) {
+	line, values := renderLine("total", t.totals, t.weeksPerMonth, formatTotals, nil, false)
 	fmt.Fprintf(w, line, values...)
 }
 
@@ -163,6 +172,18 @@ func (t *Tags) createSeparator() string {
 		line += " \t"
 	}
 	line += "\n"
+
+	return line
+}
+
+func (t *Tags) createSplitter() string {
+	// fmt.Fprintf(w, " \t-----\t-----\t-----\t-----\t-----\t \t-----\t\n")
+	line := " "
+
+	for i := 0; i < t.weeksPerMonth-1; i++ {
+		line += "\t-----"
+	}
+	line += "\t \t------\t\n"
 
 	return line
 }
@@ -188,16 +209,22 @@ func getWeeks(rules model.Rules) (int, int, []string) {
 	return firstWeek, weeksPerMonth, weeks
 }
 
-func renderLine(tag string, samples []time.Duration, weeksPerMonth int, fn Fx) (string, []any) {
+func renderLine(tag string, samples []time.Duration, weeksPerMonth int, fn, fnLast Fx, emphasis bool) (string, []any) {
 	line := "%s\t"
 	values := make([]any, weeksPerMonth+1)
-	values[0] = Blue(tag)
+	values[0] = tag
+	if emphasis {
+		values[0] = Blue(tag)
+	}
 	for i := 1; i < weeksPerMonth; i++ {
 		line += "%s\t"
 		values[i] = fn(samples[i-1])
 	}
 	line += " \t%s\t\n"
 	values[weeksPerMonth] = fn(samples[weeksPerMonth-1])
+	if fnLast != nil {
+		values[weeksPerMonth] = fnLast(samples[weeksPerMonth-1])
+	}
 
 	return line, values
 }
@@ -216,4 +243,12 @@ func formatWorking(duration time.Duration) any {
 
 func formatBreaks(duration time.Duration) any {
 	return Gray(8-1, lib.FormatDuration(duration))
+}
+
+func formatTotalWorking(duration time.Duration) any {
+	return Bold(Green(lib.FormatDuration(duration)))
+}
+
+func formatTotals(duration time.Duration) any {
+	return lib.FormatDuration(duration)
 }
