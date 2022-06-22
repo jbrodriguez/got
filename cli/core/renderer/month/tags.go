@@ -84,7 +84,7 @@ func (t *Tags) Render() {
 		return t.projects[keys[i]][t.weeksPerMonth-1] > t.projects[keys[j]][t.weeksPerMonth-1]
 	})
 
-	date := t.rules.Interval.Start.Local()
+	date := t.rules.Base.Local()
 
 	fmt.Printf("\n----------------------------- %s %s -----------------------------\t\n",
 		date.Format("January"),

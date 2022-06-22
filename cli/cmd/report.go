@@ -57,6 +57,7 @@ func (r *Report) Run(ctx *Context) error {
 		Period:   period,
 		Interval: interval,
 		DataDir:  ctx.DataDir,
+		Base:     date,
 	}
 
 	var renderer model.Renderer
