@@ -123,7 +123,7 @@ func (t *Tags) renderWeekNames(w *tabwriter.Writer) {
 		line += "\t%s"
 		values[i] = t.weeks[i]
 	}
-	line += " \t%s\t\n"
+	line += "\t\t%s\t\n"
 	values[t.weeksPerMonth-1] = t.weeks[t.weeksPerMonth-1]
 
 	fmt.Fprintf(w, line, values...)
@@ -159,7 +159,7 @@ func (t *Tags) renderBreak(w *tabwriter.Writer) {
 func (t *Tags) createSeparator() string {
 	line := ""
 
-	for i := 1; i < t.weeksPerMonth; i++ {
+	for i := 0; i < t.weeksPerMonth+2; i++ {
 		line += " \t"
 	}
 	line += "\n"
