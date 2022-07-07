@@ -23,3 +23,14 @@ func TestMonthInterval(t *testing.T) {
 	assert.Equal(t, 22, bw)
 	assert.Equal(t, 26, ew)
 }
+
+func TestCalendarInterval(t *testing.T) {
+	bom, eom := monthInterval(2022, 7)
+	assert.Equal(t, time.Date(2022, 7, 1, 0, 0, 0, 0, time.Local), bom.Local())
+	assert.Equal(t, time.Date(2022, 7, 31, 23, 59, 59, 999999999, time.Local), eom.Local())
+
+	start, _ := weekInterval(bom.Local().ISOWeek())
+	_, end := weekInterval(eom.Local().ISOWeek())
+	assert.Equal(t, time.Date(2022, 6, 27, 0, 0, 0, 0, time.Local), start.Local())
+	assert.Equal(t, time.Date(2022, 7, 31, 23, 59, 59, 999999999, time.Local), end.Local())
+}
