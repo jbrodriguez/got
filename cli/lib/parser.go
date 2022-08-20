@@ -11,7 +11,7 @@ import (
 var (
 	emptyStr   string
 	activityRx = regexp.MustCompile(`(?P<End>\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\d|3[0-1])T(?:[0-1]\d|2[0-3]):[0-5]\d:[0-5]\dZ)\s+(?P<Tag>.*)\:\s+(?P<Task>.*)`)
-	onRx       = regexp.MustCompile(`(?P<End>\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\d|3[0-1])T(?:[0-1]\d|2[0-3]):[0-5]\d:[0-5]\dZ)\s+on`)
+	onRx       = regexp.MustCompile(`(?P<End>\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[1-2]\d|3[0-1])T(?:[0-1]\d|2[0-3]):[0-5]\d:[0-5]\dZ)\s+on$`)
 )
 
 func parseTime(s string) (time.Time, error) {

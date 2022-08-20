@@ -16,6 +16,8 @@ func GetRange(period model.Period, date time.Time) model.Range {
 	case model.Someday:
 		start = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local).UTC()
 		end = time.Date(date.Year(), date.Month(), date.Day()+1, 0, 0, 0, -1, time.Local).UTC()
+	case model.Daily:
+		fallthrough
 	case model.Week:
 		start, end = weekInterval(date.ISOWeek())
 	case model.Month:

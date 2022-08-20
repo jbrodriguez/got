@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"got/cli/core/renderer/daily"
 	"got/cli/core/renderer/month"
 	"got/cli/core/renderer/someday"
 	"got/cli/core/renderer/today"
@@ -17,18 +18,19 @@ import (
 type Report struct {
 	Today    bool   `short:"t" help:"report for the current day" `
 	Someday  bool   `short:"s" help:"report for a specific day"`
-	Week     bool   `short:"w" help:"report for the a week"`
-	Month    bool   `short:"m" help:"report for the a month"`
-	Calendar bool   `short:"c" help:"report for the a calendar month"`
+	Week     bool   `short:"w" help:"report for a week"`
+	Month    bool   `short:"m" help:"report for a month"`
+	Calendar bool   `short:"c" help:"report for a calendar month"`
+	Daily    bool   `short:"d" help:"report for each day of a week"`
 	Param    string `arg:"" optional:"" help:"date to report on"`
 }
 
 func (r *Report) Run(ctx *Context) error {
 	period := model.Unknown
 	switch {
-	case r.Today || (!r.Today && !r.Someday && !r.Week && !r.Month && !r.Calendar && r.Param == ""):
+	case r.Today || (!r.Today && !r.Someday && !r.Week && !r.Month && !r.Calendar && !r.Daily && r.Param == ""):
 		period = model.Today
-	case (r.Someday && r.Param != "") || (r.Param != "" && !r.Someday && !r.Week && !r.Month && !r.Calendar):
+	case (r.Someday && r.Param != "") || (r.Param != "" && !r.Someday && !r.Week && !r.Month && !r.Calendar && !r.Daily):
 		period = model.Someday
 	case r.Week:
 		period = model.Week
@@ -36,6 +38,8 @@ func (r *Report) Run(ctx *Context) error {
 		period = model.Month
 	case r.Calendar:
 		period = model.Calendar
+	case r.Daily:
+		period = model.Daily
 	}
 
 	if period == model.Unknown {
@@ -70,6 +74,8 @@ func (r *Report) Run(ctx *Context) error {
 		renderer = week.NewWeek(rules)
 	case model.Someday:
 		renderer = someday.NewSomeday(rules)
+	case model.Daily:
+		renderer = daily.NewDaily(rules)
 	case model.Today:
 		fallthrough
 	default:
