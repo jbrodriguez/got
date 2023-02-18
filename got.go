@@ -20,7 +20,7 @@ var cli struct {
 
 func main() {
 	home := os.Getenv("HOME")
-	dataDir := filepath.Join(home, ".local", "share", "got")
+	dataDir := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "share", "got")
 
 	if !strings.HasSuffix(dataDir, "/") {
 		dataDir += "/"
